@@ -22,6 +22,7 @@ export class InputManager {
       attack: false,
       restart: false,
       debugToggle: false,
+      invincibility: false, // Week 9 debug: invincibility toggle
     };
 
     // canonical snapshot (same object reused every frame)
@@ -35,6 +36,7 @@ export class InputManager {
       attackPressed: false,
       restartPressed: false,
       debugTogglePressed: false,
+      invincibilityPressed: false, // Week 9 debug: press I to toggle invincibility
     };
   }
 
@@ -47,6 +49,7 @@ export class InputManager {
       this._input.attackPressed = false;
       this._input.restartPressed = false;
       this._input.debugTogglePressed = false;
+      this._input.invincibilityPressed = false;
       return this._input;
     }
 
@@ -64,7 +67,9 @@ export class InputManager {
     const jumpDown = kb.pressing("w") || kb.pressing("up");
     const attackDown = kb.pressing("space");
     const restartDown = kb.pressing("r");
-    const debugToggleDown = kb.pressing("t");
+    // D is the spec-required debug key; T kept for convenience (D also moves right on first frame)
+    const debugToggleDown = kb.pressing("t") || kb.pressing("d");
+    const invincibilityDown = kb.pressing("i"); // Week 9 debug: invincibility toggle
 
     // -----------------------
     // Write snapshot
@@ -76,6 +81,7 @@ export class InputManager {
     this._input.attackPressed = attackDown && !this._prevDown.attack;
     this._input.restartPressed = restartDown && !this._prevDown.restart;
     this._input.debugTogglePressed = debugToggleDown && !this._prevDown.debugToggle;
+    this._input.invincibilityPressed = invincibilityDown && !this._prevDown.invincibility;
 
     // -----------------------
     // Store prev DOWN states
@@ -84,6 +90,7 @@ export class InputManager {
     this._prevDown.attack = attackDown;
     this._prevDown.restart = restartDown;
     this._prevDown.debugToggle = debugToggleDown;
+    this._prevDown.invincibility = invincibilityDown;
 
     return this._input;
   }

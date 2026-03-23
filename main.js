@@ -36,11 +36,9 @@ function unlockAudioOnce() {
   if (typeof userStartAudio === "function") userStartAudio();
 
   // start looping music after audio unlock
-  if (soundManager?.sfx?.music) {
-    soundManager.sfx.music.setLoop(true);
-    if (!soundManager.sfx.music.isPlaying()) {
-      soundManager.play("music");
-    }
+  if (soundManager) {
+    soundManager.setLoop("music", true);
+    soundManager.play("music");
   }
 }
 
@@ -65,6 +63,10 @@ let hudGfx;
 let tuningDoc;
 let levelPkg;
 let assets;
+
+let loader;
+let levelOrder = [];
+let currentLevelIndex = 0;
 
 let cameraController;
 let inputManager;
@@ -96,8 +98,16 @@ async function boot() {
   // --- Data ---
   tuningDoc = await loadJSONAsync(TUNING_URL);
 
-  const loader = new LevelLoader(tuningDoc);
-  levelPkg = await loader.load(LEVELS_URL, START_LEVEL_ID);
+  loader = new LevelLoader(tuningDoc);
+  const levelsDoc = await loader.loadDoc(LEVELS_URL);
+  levelOrder = Array.isArray(levelsDoc.levels)
+    ? levelsDoc.levels.map((l) => l.id)
+    : [];
+
+  currentLevelIndex = levelOrder.indexOf(START_LEVEL_ID);
+  if (currentLevelIndex < 0) currentLevelIndex = 0;
+
+  levelPkg = await loader.load(LEVELS_URL, levelOrder[currentLevelIndex]);
 
   // --- Assets (images/animations/etc.) ---
   assets = await loadAssets(levelPkg, tuningDoc);
@@ -155,6 +165,24 @@ function initRuntime() {
   inputManager = new InputManager();
   debugOverlay = new DebugOverlay();
 
+  setParallaxFromLevel();
+  buildGameInstance();
+
+  loop();
+}
+
+function setParallaxFromLevel() {
+  const defs = levelPkg.level?.view?.parallax ?? [];
+  parallaxLayers = defs
+    .map((d) => ({ img: loadImage(d.img), factor: Number(d.speed ?? 0) }))
+    .filter((l) => l.img);
+
+  parallax = new ParallaxBackground(parallaxLayers);
+}
+
+function buildGameInstance() {
+  if (!levelPkg || !assets) return;
+
   game = new Game(levelPkg, assets, {
     hudGfx,
     inputManager,
@@ -174,9 +202,59 @@ function initRuntime() {
     cameraController?.reset();
   });
 
-  parallax = new ParallaxBackground(parallaxLayers);
+  game.events.on("level:won", () => {
+    if (!levelOrder.length) return;
+    const nextIndex = (currentLevelIndex + 1) % levelOrder.length;
 
-  loop();
+    setTimeout(() => {
+      loadLevelByIndex(nextIndex);
+    }, 1200);
+  });
+
+  if (soundManager) {
+    soundManager.setLoop("music", true);
+    soundManager.play("music");
+  }
+}
+
+async function loadLevelByIndex(index) {
+  if (!loader || !levelOrder.length) return;
+
+  // Avoid repeated keypresses stacking lots of nested world objects.
+  if (game?.destroy) {
+    game.destroy();
+  }
+
+  if (
+    typeof allSprites !== "undefined" &&
+    allSprites &&
+    typeof allSprites.remove === "function"
+  ) {
+    allSprites.remove();
+  }
+
+  const nextIndex = Math.max(0, Math.min(index, levelOrder.length - 1));
+  currentLevelIndex = nextIndex;
+  levelPkg = await loader.load(LEVELS_URL, levelOrder[currentLevelIndex]);
+
+  // Ensure current level index and level id remain in sync.
+  const loadedLevelId = levelPkg?.level?.id;
+  const resolvedIndex = levelOrder.indexOf(loadedLevelId);
+  if (resolvedIndex >= 0) {
+    currentLevelIndex = resolvedIndex;
+  }
+
+  console.log(
+    "loadLevelByIndex",
+    index,
+    "->",
+    loadedLevelId,
+    "currentLevelIndex",
+    currentLevelIndex,
+  );
+
+  setParallaxFromLevel();
+  buildGameInstance();
 }
 
 // ------------------------------------------------------------
@@ -254,6 +332,32 @@ function mousePressed() {
 
 function keyPressed(evt) {
   unlockAudioOnce();
+
+  if (evt?.repeat) {
+    return preventKeysThatScroll(evt);
+  }
+
+  const k = (evt?.key ?? "").toLowerCase();
+
+  // Debug / level skip helpers because Level 2 can be hard if layout needs tuning.
+  if (k === "n" || k === "j") {
+    if (!levelOrder.length) return preventKeysThatScroll(evt);
+    const nextIndex = (currentLevelIndex + 1) % levelOrder.length;
+    console.log("next-level request", nextIndex, "->", levelOrder[nextIndex]);
+    loadLevelByIndex(nextIndex);
+    return preventKeysThatScroll(evt);
+  }
+
+  if (k === "1") {
+    loadLevelByIndex(0);
+    return preventKeysThatScroll(evt);
+  }
+
+  if (k === "2") {
+    loadLevelByIndex(1);
+    return preventKeysThatScroll(evt);
+  }
+
   return preventKeysThatScroll(evt);
 }
 

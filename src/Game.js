@@ -222,6 +222,12 @@ export class Game {
       this.debug.toggle();
     }
 
+    // Week 9 debug: I key toggles player invincibility
+    if (inputSnap?.invincibilityPressed) {
+      const player = this.level?.playerCtrl?.player;
+      if (player) player.invincible = !player.invincible;
+    }
+
     // Always advance WORLD (keeps physics + animation normal).
     // Level should stop its internal timer when won/dead.
     this.level.update({ input: inputSnap });
@@ -330,5 +336,21 @@ export class Game {
 
     // refresh leaderboard snapshot
     this.topScores = this.highScores.getTop?.(5) ?? this.topScores;
+  }
+
+  destroy() {
+    // teardown level + event listeners
+    this.level?.destroy?.();
+
+    this._unsubs.forEach((u) => u());
+    this._unsubs = [];
+
+    this.level = null;
+    this.player = null;
+    this.playerCtrl = null;
+    this.events = null;
+    this.debug = null;
+    this.sound = null;
+    this.input = null;
   }
 }

@@ -40,6 +40,7 @@ export class PlayerEntity {
     // state
     this.dead = false;
     this.pendingDeath = false;
+    this.invincible = false; // Week 9 debug: set true to skip all damage
 
     // death animation latch (prevents looping forever)
     this.deathAnimStarted = false;
@@ -153,6 +154,7 @@ export class PlayerEntity {
     this.dead = false;
     this.pendingDeath = false;
     this.deathAnimStarted = false;
+    this.invincible = false; // debug: clear invincibility on restart
 
     this.invulnTimer = 0;
     this.knockTimer = 0;
@@ -286,6 +288,8 @@ export class PlayerEntity {
   // damage / effects
   // -----------------------
   takeDamageFromX(sourceX) {
+    // Week 9 debug: skip damage when invincible mode is on
+    if (this.invincible) return false;
     if (this.invulnTimer > 0 || this.dead) return false;
 
     this.health = Math.max(0, this.health - 1);

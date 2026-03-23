@@ -21,10 +21,51 @@ export class SoundManager {
   }
 
   load(name, path) {
-    this.sfx[name] = loadSound(path);
+    this.sfx[name] = loadSound(
+      path,
+      () => {
+        const track = this.sfx[name];
+        if (!track) return;
+        track._ready = true;
+        if (track._loopWanted) {
+          track.setLoop(true);
+        }
+        if (track._playWanted) {
+          track.play();
+          track._playWanted = false;
+        }
+      },
+      (err) => {
+        console.warn(`Failed to load sound '${name}' at '${path}':`, err);
+      },
+    );
+
+    this.sfx[name]._ready = false;
+    this.sfx[name]._playWanted = false;
+    this.sfx[name]._loopWanted = false;
+  }
+
+  setLoop(name, shouldLoop = true) {
+    const track = this.sfx[name];
+    if (!track) return;
+    track._loopWanted = shouldLoop;
+    if (track.isLoaded && track.isLoaded()) {
+      track.setLoop(shouldLoop);
+    }
   }
 
   play(name) {
-    this.sfx[name]?.play();
+    const track = this.sfx[name];
+    if (!track) return;
+
+    if (track.isLoaded && track.isLoaded()) {
+      if (!track.isPlaying || !track.isPlaying()) {
+        track.play();
+      }
+      return;
+    }
+
+    console.warn(`Sound '${name}' not ready yet; queuing play once ready.`);
+    track._playWanted = true;
   }
 }
