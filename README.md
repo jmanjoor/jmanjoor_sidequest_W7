@@ -1,6 +1,6 @@
 ## Project Title
 
-## GBDA302 Week 9 Side Quest: Reflective Blob Platformer (Debug HUD and Bonus Level)
+## GBDA302 Week 9 Side Quest: Reflective Blob Platformer Debug Screen
 
 ## Authors
 
@@ -11,35 +11,34 @@ Modified and extended by Jowan Manjooran Jomon
 
 ## Description
 
-This project builds on the Week 6 blob platformer and extends it with a toggleable debug system and a second bonus level.
+This project builds on the Week 6 blob platformer and extends it with a toggleable debug system.
 
-The player controls a small character navigating a side-scrolling world with collectibles, enemies, and hazards. The game now includes:
+The player controls a small character navigating a side-scrolling world with collectibles, enemies, and hazards. The game includes:
 
-Debug HUD: Toggleable overlay for live game information, including player position, velocity, health, score, active enemies, collectibles, and event logs. Hitboxes for the player, enemies, and collectibles can be visualized to aid testing.
-Level Management: The game now supports multiple levels. Completing the first level transitions to a second bonus level with unique layout, enemies, and collectibles.
-Audio Integration: Background music and sound effects are present in both levels. Sounds are tied to player actions, collisions, and events.
-Modular Architecture: Levels, physics, collectibles, enemies, and rendering remain modular. JSON configuration files control level layout, physics, and spawn points, allowing flexible environment changes without modifying core code.
+Debug HUD: A toggleable overlay that displays live game information such as player position, velocity, health, score, active enemies, collectibles, and recent event logs. Hitboxes for the player, enemies, and collectibles can also be visualized to support collision testing.
 
-These additions enhance gameplay testing and expand the platformer experience while keeping the structured design from previous assignments.
+Audio Integration: Background music and sound effects are connected to gameplay events such as jumping, collecting items, and taking damage.
 
----
+Modular Architecture: The game uses a modular structure where systems such as input, camera, sound, and gameplay logic are separated. JSON configuration files control level setup and behavior, allowing flexible changes without modifying core code.
+
+## These additions improve testing, debugging, and overall clarity of the gameplay experience.
+
+## Controls
+
+Arrow Keys / WASD – Move
+Space – Jump
+D – Toggle Debug HUD
 
 ## Learning Goals
 
-Learning Goals:
-
 - - Implement a toggleable debug HUD to visualize game state and hitboxes
-- - Add a second playable level with unique layout, enemies, and collectibles
-- - Maintain modular level design and transition logic
+- - Maintain modular game structure and system separation
 - - Implement sprite sheet animations for characters and objects
 - - Use tilesets for environment graphics
 - - Add and connect sound effects and background music to gameplay events
 - - Use event-driven programming to track game actions
 - - Load and parse level data from JSON files
 - - Structure a p5.js project with clear separation between world logic, rendering, and system modules
-    Assets
-
----
 
 ## Assets
 
