@@ -35,10 +35,11 @@ function unlockAudioOnce() {
 
   if (typeof userStartAudio === "function") userStartAudio();
 
-  // start looping music after audio unlock
-  if (soundManager) {
-    soundManager.setLoop("music", true);
-    soundManager.play("music");
+  if (soundManager?.sfx?.music) {
+    soundManager.sfx.music.setLoop(true);
+    if (!soundManager.sfx.music.isPlaying()) {
+      soundManager.play("music");
+    }
   }
 }
 
@@ -65,8 +66,6 @@ let levelPkg;
 let assets;
 
 let loader;
-let levelOrder = [];
-let currentLevelIndex = 0;
 
 let cameraController;
 let inputManager;
@@ -77,11 +76,10 @@ let winScreen;
 let loseScreen;
 let parallaxLayers = [];
 
-// Make URLs absolute so they can’t accidentally resolve relative to /src/...
+// Make URLs absolute so they can't accidentally resolve relative to /src/...
 const LEVELS_URL = new URL("./data/levels.json", window.location.href).href;
 const TUNING_URL = new URL("./data/tuning.json", window.location.href).href;
 
-// This must match a level id in levels.json
 const START_LEVEL_ID = "ex5_level1";
 
 // Boot flags
@@ -99,36 +97,19 @@ async function boot() {
   tuningDoc = await loadJSONAsync(TUNING_URL);
 
   loader = new LevelLoader(tuningDoc);
-  const levelsDoc = await loader.loadDoc(LEVELS_URL);
-  levelOrder = Array.isArray(levelsDoc.levels)
-    ? levelsDoc.levels.map((l) => l.id)
-    : [];
-
-  currentLevelIndex = levelOrder.indexOf(START_LEVEL_ID);
-  if (currentLevelIndex < 0) currentLevelIndex = 0;
-
-  levelPkg = await loader.load(LEVELS_URL, levelOrder[currentLevelIndex]);
+  levelPkg = await loader.load(LEVELS_URL, START_LEVEL_ID);
 
   // --- Assets (images/animations/etc.) ---
   assets = await loadAssets(levelPkg, tuningDoc);
 
   // --- Audio registry ---
   soundManager = new SoundManager();
-  soundManager.load("jump", "assets/sfx/jump.wav");
-  soundManager.load("hitEnemy", "assets/sfx/hitEnemy.wav");
-  soundManager.load("leafCollect", "assets/sfx/leafCollect.wav");
+  soundManager.load("jump",          "assets/sfx/jump.wav");
+  soundManager.load("hitEnemy",      "assets/sfx/hitEnemy.wav");
+  soundManager.load("leafCollect",   "assets/sfx/leafCollect.wav");
   soundManager.load("receiveDamage", "assets/sfx/receiveDamage.wav");
-  soundManager.load("music", "assets/sfx/music.wav");
-  soundManager.load("attack", "assets/sfx/attack.wav");
-
-  // --- Parallax layer defs (VIEW) ---
-  const defs = levelPkg.level?.view?.parallax ?? [];
-  parallaxLayers = defs
-    .map((d) => ({
-      img: loadImage(d.img),
-      factor: Number(d.speed ?? 0),
-    }))
-    .filter((l) => l.img);
+  soundManager.load("music",         "assets/sfx/music.wav");
+  soundManager.load("attack",        "assets/sfx/attack.wav");
 
   initRuntime();
 
@@ -137,7 +118,7 @@ async function boot() {
 }
 
 // ------------------------------------------------------------
-// Runtime init (sync) — called after boot() finishes
+// Runtime init (sync) — called once after boot() finishes
 // ------------------------------------------------------------
 
 function initRuntime() {
@@ -155,21 +136,24 @@ function initRuntime() {
   installResizeHandler(viewW, viewH);
 
   allSprites.pixelPerfect = true;
-
   world.autoStep = false;
 
   hudGfx = createGraphics(viewW, viewH);
   hudGfx.noSmooth();
   hudGfx.pixelDensity(1);
 
-  inputManager = new InputManager();
-  debugOverlay = new DebugOverlay();
+  inputManager  = new InputManager();
+  debugOverlay  = new DebugOverlay();
 
   setParallaxFromLevel();
   buildGameInstance();
 
   loop();
 }
+
+// ------------------------------------------------------------
+// Level helpers
+// ------------------------------------------------------------
 
 function setParallaxFromLevel() {
   const defs = levelPkg.level?.view?.parallax ?? [];
@@ -191,7 +175,7 @@ function buildGameInstance() {
   });
   game.build();
 
-  winScreen = new WinScreen(levelPkg, assets);
+  winScreen  = new WinScreen(levelPkg, assets);
   loseScreen = new LoseScreen(levelPkg, assets);
 
   cameraController = new CameraController(levelPkg);
@@ -201,60 +185,6 @@ function buildGameInstance() {
   game.events.on("level:restarted", () => {
     cameraController?.reset();
   });
-
-  game.events.on("level:won", () => {
-    if (!levelOrder.length) return;
-    const nextIndex = (currentLevelIndex + 1) % levelOrder.length;
-
-    setTimeout(() => {
-      loadLevelByIndex(nextIndex);
-    }, 1200);
-  });
-
-  if (soundManager) {
-    soundManager.setLoop("music", true);
-    soundManager.play("music");
-  }
-}
-
-async function loadLevelByIndex(index) {
-  if (!loader || !levelOrder.length) return;
-
-  // Avoid repeated keypresses stacking lots of nested world objects.
-  if (game?.destroy) {
-    game.destroy();
-  }
-
-  if (
-    typeof allSprites !== "undefined" &&
-    allSprites &&
-    typeof allSprites.remove === "function"
-  ) {
-    allSprites.remove();
-  }
-
-  const nextIndex = Math.max(0, Math.min(index, levelOrder.length - 1));
-  currentLevelIndex = nextIndex;
-  levelPkg = await loader.load(LEVELS_URL, levelOrder[currentLevelIndex]);
-
-  // Ensure current level index and level id remain in sync.
-  const loadedLevelId = levelPkg?.level?.id;
-  const resolvedIndex = levelOrder.indexOf(loadedLevelId);
-  if (resolvedIndex >= 0) {
-    currentLevelIndex = resolvedIndex;
-  }
-
-  console.log(
-    "loadLevelByIndex",
-    index,
-    "->",
-    loadedLevelId,
-    "currentLevelIndex",
-    currentLevelIndex,
-  );
-
-  setParallaxFromLevel();
-  buildGameInstance();
 }
 
 // ------------------------------------------------------------
@@ -313,17 +243,17 @@ function draw() {
     },
   });
 
-  const won = game?.won === true || game?.level?.won === true;
+  const won  = game?.won === true || game?.level?.won === true;
   const dead = game?.lost === true || game?.level?.player?.dead === true;
 
   const elapsedMs = Number(game?.elapsedMs ?? game?.level?.elapsedMs ?? 0);
 
-  if (won) winScreen?.draw({ elapsedMs, game });
+  if (won)  winScreen?.draw({ elapsedMs, game });
   if (dead) loseScreen?.draw({ elapsedMs, game });
 }
 
 // ------------------------------------------------------------
-// Optional input callbacks (audio unlock feels invisible)
+// Input callbacks
 // ------------------------------------------------------------
 
 function mousePressed() {
@@ -333,30 +263,7 @@ function mousePressed() {
 function keyPressed(evt) {
   unlockAudioOnce();
 
-  if (evt?.repeat) {
-    return preventKeysThatScroll(evt);
-  }
-
-  const k = (evt?.key ?? "").toLowerCase();
-
-  // Debug / level skip helpers because Level 2 can be hard if layout needs tuning.
-  if (k === "n" || k === "j") {
-    if (!levelOrder.length) return preventKeysThatScroll(evt);
-    const nextIndex = (currentLevelIndex + 1) % levelOrder.length;
-    console.log("next-level request", nextIndex, "->", levelOrder[nextIndex]);
-    loadLevelByIndex(nextIndex);
-    return preventKeysThatScroll(evt);
-  }
-
-  if (k === "1") {
-    loadLevelByIndex(0);
-    return preventKeysThatScroll(evt);
-  }
-
-  if (k === "2") {
-    loadLevelByIndex(1);
-    return preventKeysThatScroll(evt);
-  }
+  if (evt?.repeat) return preventKeysThatScroll(evt);
 
   return preventKeysThatScroll(evt);
 }
@@ -376,7 +283,7 @@ window.addEventListener(
 // IMPORTANT: expose p5 entrypoints in module scope
 // ------------------------------------------------------------
 
-window.setup = setup;
-window.draw = draw;
+window.setup    = setup;
+window.draw     = draw;
 window.mousePressed = mousePressed;
-window.keyPressed = keyPressed;
+window.keyPressed   = keyPressed;

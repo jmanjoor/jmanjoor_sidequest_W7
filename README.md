@@ -1,6 +1,6 @@
 ## Project Title
 
-## GBDA302 Week 6 Side Quest: Reflective Blob Platformer (Sprites, Tiles, and Sound)
+## GBDA302 Week 9 Side Quest: Reflective Blob Platformer (Debug HUD and Bonus Level)
 
 ## Authors
 
@@ -11,15 +11,16 @@ Modified and extended by Jowan Manjooran Jomon
 
 ## Description
 
-This project builds on the earlier blob platformer framework and expands it with visual and audio improvements. The game now uses custom sprite sheets, a tileset for the environment, and multiple sound effects to create a more immersive experience.
+This project builds on the Week 6 blob platformer and extends it with a toggleable debug system and a second bonus level.
 
-The player controls a small character that explores a side-scrolling world larger than the screen. A smooth camera follows the player through the environment while collectibles are scattered across the level. The goal is to move through the world, avoid hazards, defeat enemies, and collect all hidden symbols.
+The player controls a small character navigating a side-scrolling world with collectibles, enemies, and hazards. The game now includes:
 
-The game world is defined using JSON configuration files, which control level layout, physics settings, collectible locations, and other gameplay parameters. This allows the game environment to be easily modified without changing the core code.
+Debug HUD: Toggleable overlay for live game information, including player position, velocity, health, score, active enemies, collectibles, and event logs. Hitboxes for the player, enemies, and collectibles can be visualized to aid testing.
+Level Management: The game now supports multiple levels. Completing the first level transitions to a second bonus level with unique layout, enemies, and collectibles.
+Audio Integration: Background music and sound effects are present in both levels. Sounds are tied to player actions, collisions, and events.
+Modular Architecture: Levels, physics, collectibles, enemies, and rendering remain modular. JSON configuration files control level layout, physics, and spawn points, allowing flexible environment changes without modifying core code.
 
-Custom sprite sheets are used for the player character, enemies, collectibles, and environmental tiles. Sound effects have been added for actions such as jumping, attacking, collecting items, and taking damage. A looping background track plays during gameplay to reinforce atmosphere.
-
-Together, these additions make the platformer feel more dynamic while maintaining the structured architecture introduced in previous assignments.
+These additions enhance gameplay testing and expand the platformer experience while keeping the structured design from previous assignments.
 
 ---
 
@@ -27,15 +28,16 @@ Together, these additions make the platformer feel more dynamic while maintainin
 
 Learning Goals:
 
-- - Load and parse level data from JSON files
-- - Define and render a tile-based platformer level
+- - Implement a toggleable debug HUD to visualize game state and hitboxes
+- - Add a second playable level with unique layout, enemies, and collectibles
+- - Maintain modular level design and transition logic
 - - Implement sprite sheet animations for characters and objects
-- - Replace default graphics with a custom tileset
-- - Hide small interactive symbols for the camera and player to discover
-- - Add sound effects and background music
-- - Connect gameplay events to sound using an event-driven system
-- - Structure a p5.js project using modular classes such as
-- - Maintain separation between world logic, system modules, and rendering
+- - Use tilesets for environment graphics
+- - Add and connect sound effects and background music to gameplay events
+- - Use event-driven programming to track game actions
+- - Load and parse level data from JSON files
+- - Structure a p5.js project with clear separation between world logic, rendering, and system modules
+    Assets
 
 ---
 
